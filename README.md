@@ -1,0 +1,1 @@
+這是一個Thread的練習，由Send端發送十個thread給Receive端
