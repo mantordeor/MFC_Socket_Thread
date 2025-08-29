@@ -70,6 +70,9 @@ BEGIN_MESSAGE_MAP(CSocketClientDlg, CDialogEx)
 	ON_BN_CLICKED(IDCANCEL, &CSocketClientDlg::OnBnClickedCancel)
 	ON_BN_CLICKED(IDOK, &CSocketClientDlg::OnBnClickedOk)
 	ON_BN_CLICKED(IDC_BUTTON1, &CSocketClientDlg::OnBnClickedButton1)
+	ON_BN_CLICKED(IDC_BUTTON3, &CSocketClientDlg::OnBnClickedButton3)
+	ON_BN_CLICKED(IDC_BUTTON2, &CSocketClientDlg::OnBnClickedButton2)
+	ON_EN_CHANGE(IDC_EDIT1, &CSocketClientDlg::OnEnChangeEdit1)
 END_MESSAGE_MAP()
 
 typedef struct {
@@ -165,7 +168,16 @@ BOOL CSocketClientDlg::OnInitDialog()
 	// 框架會自動從事此作業
 	SetIcon(m_hIcon, TRUE);			// 設定大圖示
 	SetIcon(m_hIcon, FALSE);		// 設定小圖示
-
+	
+	m_ip = "127.0.0.1";
+	SetDlgItemText(IDC_EDIT1, m_ip);
+	GetDlgItem(IDC_BUTTON1)->EnableWindow(FALSE);
+	GetDlgItem(IDC_BUTTON2)->EnableWindow(FALSE);
+	WSADATA wsaData;
+	WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (HIBYTE(wsaData.wVersion) != 2 || LOBYTE(wsaData.wVersion) != 2) {
+		AfxMessageBox(_T("Initialize Winsock Failed"));
+	}
 	// TODO: 在此加入額外的初始設定
 
 	return TRUE;  // 傳回 TRUE，除非您對控制項設定焦點
@@ -229,8 +241,42 @@ void CSocketClientDlg::OnBnClickedCancel()
 	CDialogEx::OnCancel();
 }
 
+bool CSocketClientDlg::check_ip() {
+	GetDlgItemText(IDC_EDIT1, m_ip);
+	// 檢查 IP 格式 (簡單 IPv4 格式檢查)
+	std::wstring ipStr = std::wstring(m_ip);
+	std::wregex ipPattern(LR"(^(\d{1,3}\.){3}\d{1,3}$)");
+	if (!std::regex_match(ipStr, ipPattern)) {
+		AfxMessageBox(_T("IP 格式錯誤，請輸入正確的 IPv4 位址 (例如 192.168.1.1)"));
+		m_ip = _T("");
+		SetDlgItemText(IDC_EDIT1, m_ip);
+		return false;
+	}
+
+	// 進一步檢查每個區段是否在 0~255
+	std::wstringstream ss(ipStr);
+	std::wstring segment;
+	int count = 0;
+	bool valid = true;
+	while (std::getline(ss, segment, L'.')) {
+		int num = _wtoi(segment.c_str());
+		if (num < 0 || num > 255) {
+			valid = false;
+			break;
+		}
+		count++;
+	}
+	if (count != 4 || !valid) {
+		AfxMessageBox(_T("IP 格式錯誤，請輸入正確的 IPv4 位址 (例如 192.168.1.1)"));
+		m_ip = _T("");
+		SetDlgItemText(IDC_EDIT1, m_ip);
+		return false;
+	}
+	return true;
+}
+
 BOOL CSocketClientDlg::PreTranslateMessage(MSG* pMsg) {
-	if (pMsg->message == WM_KEYDOWN || pMsg->message == VK_ESCAPE) return TRUE;
+	if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_ESCAPE) return TRUE;
 	return CDialog::PreTranslateMessage(pMsg);
 }
 
@@ -242,34 +288,11 @@ void CSocketClientDlg::OnBnClickedOk()
 
 void CSocketClientDlg::OnBnClickedButton1()
 {
+	
 	HANDLE hThreads[10];
 	ThreadInfo* threadInfo[10];
 	// TODO: 在此加入控制項告知處理常式程式碼
-	WSADATA wsaData;
-	WSAStartup(MAKEWORD(2, 2), &wsaData);
-	if (HIBYTE(wsaData.wVersion) != 2 || LOBYTE(wsaData.wVersion) != 2) return ;
-	ClientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (ClientSocket == -1) {
-		CString msg;
-		msg.Format(_T("CreateSocket failed : % u"), GetLastError());
-		LogAction(msg);
-		AfxMessageBox(msg);
-		WSACleanup();
-		return;
-	}
-	SOCKADDR_IN ServerAddr = { 0 };
-	ServerAddr.sin_family = AF_INET;
-	InetPton(AF_INET, _T("127.0.0.1"), &ServerAddr.sin_addr.S_un.S_addr);
-	ServerAddr.sin_port = htons(7000);
-	int r = connect(ClientSocket, (const sockaddr*)&ServerAddr, sizeof ServerAddr);
-	if (r == -1) {
-		CString msg;
-		msg.Format(_T("ConnectSocket failed : % u"), GetLastError());
-		LogAction(msg);
-		AfxMessageBox(msg);
-		WSACleanup();
-		return ;
-	}
+	
 	for (int i = 0; i < 10; ++i) {
 		SOCKET clientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (clientSocket == -1) {
@@ -304,4 +327,50 @@ void CSocketClientDlg::OnBnClickedButton1()
 		closesocket(threadInfo[j]->clientSocket);
 		free(threadInfo[j]);
 	}
+}
+
+void CSocketClientDlg::OnBnClickedButton3()
+{
+	if (!check_ip()) return;
+	// TODO: 在此加入控制項告知處理常式程式碼
+	ClientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (ClientSocket == -1) {
+		CString msg;
+		msg.Format(_T("CreateSocket failed : % u"), GetLastError());
+		LogAction(msg);
+		AfxMessageBox(msg);
+		return;
+	}
+	SOCKADDR_IN ServerAddr = { 0 };
+	ServerAddr.sin_family = AF_INET;
+	InetPton(AF_INET, m_ip, &ServerAddr.sin_addr.S_un.S_addr);
+	ServerAddr.sin_port = htons(7000);
+	int r = connect(ClientSocket, (const sockaddr*)&ServerAddr, sizeof ServerAddr);
+	if (r == -1) {
+		CString msg;
+		msg.Format(_T("ConnectSocket failed : % u"), GetLastError());
+		LogAction(msg);
+		AfxMessageBox(msg);
+		return;
+	}
+	GetDlgItem(IDC_BUTTON1)->EnableWindow(TRUE);
+	GetDlgItem(IDC_BUTTON2)->EnableWindow(TRUE);
+	GetDlgItem(IDC_BUTTON3)->EnableWindow(FALSE);
+}
+
+void CSocketClientDlg::OnBnClickedButton2()
+{
+	GetDlgItem(IDC_BUTTON1)->EnableWindow(FALSE);
+	GetDlgItem(IDC_BUTTON2)->EnableWindow(FALSE);
+	GetDlgItem(IDC_BUTTON3)->EnableWindow(TRUE);
+}
+
+void CSocketClientDlg::OnEnChangeEdit1()
+{
+	// TODO:  如果這是 RICHEDIT 控制項，控制項將不會
+	// 傳送此告知，除非您覆寫 CDialogEx::OnInitDialog()
+	// 函式和呼叫 CRichEditCtrl().SetEventMask()
+	// 讓具有 ENM_CHANGE 旗標 ORed 加入遮罩。
+
+	// TODO:  在此加入控制項告知處理常式程式碼
 }

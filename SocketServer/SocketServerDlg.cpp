@@ -30,6 +30,8 @@ public:
 // 程式碼實作
 protected:
 	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg void OnBnClickedButton1();
 };
 
 struct CommunicateParams {
@@ -50,6 +52,7 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
+	ON_BN_CLICKED(IDC_BUTTON1, &CAboutDlg::OnBnClickedButton1)
 END_MESSAGE_MAP()
 
 
@@ -113,7 +116,7 @@ BOOL CSocketServerDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 設定小圖示
 
 	// TODO: 在此加入額外的初始設定
-
+	GetDlgItem(IDC_BUTTON2)->EnableWindow(FALSE);
 	return TRUE;  // 傳回 TRUE，除非您對控制項設定焦點
 }
 
@@ -222,13 +225,11 @@ DWORD WINAPI communicate(LPVOID lpParam) {
 		r = recv(CSocketServerDlg::ClientSocket[idx], buff, sizeof buff - 1, 0);
 		if (r > 0) {
 			buff[r] = 0;
-			int wlen = MultiByteToWideChar(CP_UTF8, 0, buff, -1, NULL, 0);
-			CStringW wstr;
-			LPWSTR wbuf = wstr.GetBuffer(wlen);
-			MultiByteToWideChar(CP_UTF8, 0, buff, -1, wbuf, wlen);
-			wstr.ReleaseBuffer();
+			const size_t len = strlen(buff) + 1;
+			wchar_t* wbuff = new wchar_t[len];
+			mbstowcs(wbuff, buff, len);
 			CStringW* msg = new CStringW;
-			msg->Format(L"\r\n[Thread %d] %s", idx, wstr.GetString());
+			msg->Format(L"\r\n[Thread %d] %s", idx, wbuff);
 			dlg->PostMessage(WM_SHOW_DATA, (WPARAM)msg, 0);
 		}
 		else if (r == 0) {
@@ -317,17 +318,16 @@ BOOL CSocketServerDlg::PreTranslateMessage(MSG* pMsg) {
 	return CDialog::PreTranslateMessage(pMsg);
 }
 
-// 1. 在 OnBnClickedButton1 鎖定按鈕
 void CSocketServerDlg::OnBnClickedButton1()
 {
-	GetDlgItem(IDC_BUTTON1)->EnableWindow(FALSE); // 鎖定按鈕
-
+	GetDlgItem(IDC_BUTTON1)->EnableWindow(FALSE); 
+	GetDlgItem(IDC_BUTTON2)->EnableWindow(TRUE);
 	WSADATA wsaData;
 	WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (HIBYTE(wsaData.wVersion) != 2 || LOBYTE(wsaData.wVersion) != 2) {
 		printf("Initialize Winsock Failed: %u\n", GetLastError());
 		LogAction(L"Initialize Winsock Failed");
-		GetDlgItem(IDC_BUTTON1)->EnableWindow(TRUE); // 初始化失敗時恢復按鈕
+		GetDlgItem(IDC_BUTTON1)->EnableWindow(TRUE); 
 		return;
 	}
 	ServerSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -400,8 +400,13 @@ void CSocketServerDlg::OnBnClickedButton2()
 		ServerSocket = INVALID_SOCKET;
 	}
 	WSACleanup();
-
+	GetDlgItem(IDC_BUTTON2)->EnableWindow(FALSE);
 	GetDlgItem(IDC_BUTTON1)->EnableWindow(TRUE);
 	SetDlgItemText(IDC_EDIT1, L"Bind Released");
 	LogAction(L"Bind Released");
+}
+
+void CAboutDlg::OnBnClickedButton1()
+{
+	// TODO: 在此加入控制項告知處理常式程式碼
 }

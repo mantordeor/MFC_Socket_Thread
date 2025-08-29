@@ -1,0 +1,8 @@
+[2025-08-29 09:41:12] CreateSocket failed : 10093
+[2025-08-29 09:41:14] CreateSocket failed : 10093
+[2025-08-29 09:41:18] CreateSocket failed : 10093
+[2025-08-29 09:41:23] CreateSocket failed : 10093
+[2025-08-29 09:41:25] CreateSocket failed : 10093
+[2025-08-29 09:41:32] CreateSocket failed : 10093
+[2025-08-29 09:48:11] ConnectSocket failed : 10061
+[2025-08-29 09:49:53] ConnectSocket failed : 10061

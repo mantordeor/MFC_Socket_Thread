@@ -25,6 +25,7 @@ public:
 protected:
 	HICON m_hIcon;
 	SOCKET ClientSocket;
+	CString m_ip;
 	// 產生的訊息對應函式
 	virtual BOOL OnInitDialog();
 	afx_msg void OnSysCommand(UINT nID, LPARAM lParam);
@@ -36,5 +37,8 @@ public:
 	afx_msg void OnBnClickedCancel();
 	afx_msg void OnBnClickedOk();
 	afx_msg void OnBnClickedButton1();
-	
+	afx_msg void OnBnClickedButton3();
+	afx_msg void OnBnClickedButton2();
+	afx_msg void OnEnChangeEdit1();
+	bool check_ip();
 };
