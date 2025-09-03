@@ -18,4 +18,6 @@
 #include <fstream>
 #include <sstream>
 #include <regex>
+#include <ctime>
+
 #endif //PCH_H

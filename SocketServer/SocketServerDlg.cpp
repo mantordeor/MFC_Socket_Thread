@@ -10,10 +10,31 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
-
-SOCKET CSocketServerDlg::ClientSocket[1024];
+SOCKET CSocketServerDlg::ClientSocket = -1;
 // 對 App About 使用 CAboutDlg 對話方塊
-
+void LogAction(const CString& action) {
+	time_t now = time(0);
+	tm localTime;
+	localtime_s(&localTime, &now);
+	char dateBuf[20];
+	char timeBuf[20];
+	strftime(dateBuf, sizeof dateBuf, "%Y-%m-%d", &localTime);
+	strftime(timeBuf, sizeof timeBuf, "%Y-%m-%d %H:%M:%S", &localTime);
+	CString currentDate = CString(dateBuf);
+	CString filename;
+	filename.Format(_T("Server_log_%s.txt"), currentDate);
+	std::ofstream logFile(filename, std::ios::app);
+	if (logFile.is_open()) {
+		USES_CONVERSION;
+		logFile << "[" << timeBuf << "] " << CT2A(action) << std::endl;
+		logFile.close();
+	}
+	else {
+		CString errorMsg;
+		errorMsg.Format(_T("無法開啟日誌檔案 %s"), filename);
+		OutputDebugString(errorMsg);
+	}
+}
 class CAboutDlg : public CDialogEx
 {
 public:
@@ -34,9 +55,11 @@ public:
 	afx_msg void OnBnClickedButton1();
 };
 
-struct CommunicateParams {
+struct CommunicateData {
+	SOCKET socket;
+	WSAEVENT event;
+	char buffer[1024];
 	CSocketServerDlg* dlg;
-	int index;
 };
 struct AcceptThreadParams {
 	SOCKET ServerSocket;
@@ -52,7 +75,6 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 }
 
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
-	ON_BN_CLICKED(IDC_BUTTON1, &CAboutDlg::OnBnClickedButton1)
 END_MESSAGE_MAP()
 
 
@@ -178,72 +200,86 @@ void CSocketServerDlg::OnBnClickedOk()
 
 void CSocketServerDlg::OnBnClickedCancel()
 {
-	for (int i = 0; i < 1024; i++) {
-		if (ClientSocket[i] != INVALID_SOCKET) {
-			closesocket(ClientSocket[i]);
-		}
-	}
+	closesocket(ClientSocket);
 	closesocket(ServerSocket);
 	WSACleanup();
 	// TODO: 在此加入控制項告知處理常式程式碼
 	CDialogEx::OnCancel();
 }
 
-// 修改 communicate 執行緒，將收到的 buff 轉為 Unicode 傳遞給主執行緒
-
-void LogAction(const CString& action) {
-	time_t now = time(0);
-	tm localTime;
-	localtime_s(&localTime, &now);
-	char dateBuf[20];
-	char timeBuf[20];
-	strftime(dateBuf, sizeof dateBuf, "%Y-%m-%d", &localTime);
-	strftime(timeBuf, sizeof timeBuf, "%Y-%m-%d %H:%M:%S", &localTime);
-	CString currentDate = CString(dateBuf);
-	CString filename;
-	filename.Format(_T("Server_log_%s.txt"), currentDate);
-	std::ofstream logFile(filename, std::ios::app);
-	if (logFile.is_open()) {
-		USES_CONVERSION;
-		logFile << "[" << timeBuf << "] " << CT2A(action) << std::endl;
-		logFile.close();
-	}
-	else {
-		CString errorMsg;
-		errorMsg.Format(_T("無法開啟日誌檔案 %s"), filename);
-		OutputDebugString(errorMsg);
-	}
-}
-
 DWORD WINAPI communicate(LPVOID lpParam) {
-	CommunicateParams* params = (CommunicateParams*)lpParam;
-	CSocketServerDlg* dlg = params->dlg;
-	int idx = params->index;
-	int r;
-	char buff[1024];
+	CommunicateData* data = (CommunicateData*)lpParam;
+	SOCKET clientSocket = data->socket;
+	WSAEVENT event = data->event;
+	CSocketServerDlg* dlg = data->dlg;
+	int r = WSAEventSelect(clientSocket, event, FD_READ | FD_CLOSE);
+	if (r == SOCKET_ERROR) {
+		CString msg;
+		msg.Format(_T("WSAEventSelect failed: %d"), WSAGetLastError());
+		LogAction(msg);
+		closesocket(clientSocket);
+		CloseHandle(event);
+		delete data;
+		return 1;
+	}
 	while (1) {
-		r = recv(CSocketServerDlg::ClientSocket[idx], buff, sizeof buff - 1, 0);
-		if (r > 0) {
-			buff[r] = 0;
-			const size_t len = strlen(buff) + 1;
-			wchar_t* wbuff = new wchar_t[len];
-			mbstowcs(wbuff, buff, len);
-			CStringW* msg = new CStringW;
-			msg->Format(L"\r\n[Thread %d] %s", idx, wbuff);
-			dlg->PostMessage(WM_SHOW_DATA, (WPARAM)msg, 0);
-		}
-		else if (r == 0) {
-			closesocket(CSocketServerDlg::ClientSocket[idx]);
-			CSocketServerDlg::ClientSocket[idx] = INVALID_SOCKET;
+		DWORD result = WSAWaitForMultipleEvents(1, &event, FALSE, WSA_INFINITE, FALSE);
+		if (result == WSA_WAIT_FAILED) {
+			CString msg;
+			msg.Format(_T("WSAWaitForMultipleEvents failed: %d"), WSAGetLastError());
+			LogAction(msg);
 			break;
 		}
-		else {
-			closesocket(CSocketServerDlg::ClientSocket[idx]);
-			CSocketServerDlg::ClientSocket[idx] = INVALID_SOCKET;
+		WSANETWORKEVENTS networkEvents;
+		r = WSAEnumNetworkEvents(clientSocket, event, &networkEvents);
+		if (r == SOCKET_ERROR) {
+			CString msg;
+			msg.Format(_T("WSAEnumNetworkEvents failed; %d"), WSAGetLastError());
+			LogAction(msg);
+			break;
+		}
+		if (networkEvents.lNetworkEvents & FD_READ) {
+			if (networkEvents.iErrorCode[FD_READ_BIT] == 0) {
+				int bytesReceived = recv(clientSocket, data->buffer, sizeof data->buffer, 0);
+				if (bytesReceived > 0) {
+					data->buffer[bytesReceived] = 0;
+					const size_t len = strlen(data->buffer) + 1;
+					wchar_t* wbuff = new wchar_t[len];
+					mbstowcs(wbuff, data->buffer, len);
+					CStringW* msg = new CStringW;
+					msg->Format(L"\r\n%s", wbuff);
+					dlg->PostMessage(WM_SHOW_DATA, (WPARAM)msg, 0);
+				}
+				else if (bytesReceived == 0) {
+					CString msg;
+					msg.Format(_T("Client closed connection"));
+					LogAction(msg);
+					break;
+				}
+				else {
+					CString msg;
+					msg.Format(_T("recv failed: %d"), WSAGetLastError());
+					LogAction(msg);
+					break;
+				}
+			}
+			else {
+				CString msg;
+				msg.Format(_T("FD_READ error: %d"), networkEvents.iErrorCode[FD_READ_BIT]);
+				LogAction(msg);
+				break;
+			}
+		}
+		if (networkEvents.lNetworkEvents & FD_CLOSE) {
+			CString msg;
+			msg.Format(_T("Client closed connection"));
+			LogAction(msg);
 			break;
 		}
 	}
-	delete params;
+	closesocket(clientSocket);
+	CloseHandle(event);
+	delete data;
 	return 0;
 }
 LRESULT CSocketServerDlg::OnUpdateEdit1(WPARAM wParam, LPARAM lParam)
@@ -265,34 +301,37 @@ DWORD WINAPI AcceptThread(LPVOID lpParam) {
 	HWND hWnd = params->hWnd;
 	SOCKADDR_IN ClientAddr = { 0 };
 	int CADLEN = sizeof ClientAddr;
-	for (int i = 0; i < 1024; i++) {
-		CSocketServerDlg::ClientSocket[i] = accept(ServerSocket, (struct sockaddr*)&ClientAddr, &CADLEN);
-        char ipStr[INET_ADDRSTRLEN] = {0};
-        inet_ntop(AF_INET, &ClientAddr.sin_addr, ipStr, INET_ADDRSTRLEN);
-        CString ipLog;
-        ipLog.Format(_T("Client connected: %S"), ipStr);
-        LogAction(ipLog);
-		if(CSocketServerDlg::ClientSocket[i] == INVALID_SOCKET) {
-			AfxMessageBox(L"Accept Failed!");
-			LogAction(L"Accept Failed!");
-			WSACleanup();
-			delete params;
+	while(1) {
+		SOCKET clientSocket = accept(ServerSocket, (struct sockaddr*)&ClientAddr, &CADLEN);
+		if (clientSocket == INVALID_SOCKET) {
+			AfxMessageBox(L"socket failed in AcceptThread");
 			break;
 		}
-		CommunicateParams* commParams = new CommunicateParams;
-		commParams->dlg = (CSocketServerDlg*)CWnd::FromHandle(hWnd);
-		commParams->index = i;
-		HANDLE hThread = CreateThread(NULL, 0, communicate, commParams, 0, NULL);
+		char ipStr[INET_ADDRSTRLEN] = { 0 };
+		inet_ntop(AF_INET, &ClientAddr.sin_addr, ipStr, INET_ADDRSTRLEN);
+		WSAEVENT event = WSACreateEvent();
+		if (event == WSA_INVALID_EVENT) {
+			CString msg;
+			msg.Format(_T("WSACreateEvent failed: %d"), WSAGetLastError());
+			LogAction(msg);
+			closesocket(clientSocket);
+			continue;
+		}
+		CommunicateData* data = new CommunicateData;
+		data->socket = clientSocket;
+		data->event = event;
+		data->dlg = (CSocketServerDlg*)CWnd::FromHandle(hWnd);
+		HANDLE hThread = CreateThread(NULL, 0, communicate, data, 0, NULL);
 		if (hThread == NULL) {
-			AfxMessageBox(L"CreateThread Failed!");
-			LogAction(L"CreateThread Failed!");
-			WSACleanup();
-			delete commParams;
-			break;
+			CString msg;
+			msg.Format(_T("CreateThread failed: %d"), GetLastError());
+			LogAction(msg);
+			closesocket(clientSocket);
+			CloseHandle(event);
+			delete data;
+			continue;
 		}
-		else {
-			CloseHandle(hThread);
-		}
+		else CloseHandle(hThread);
 	}
 	closesocket(ServerSocket);
 	WSACleanup();
@@ -389,16 +428,8 @@ void CSocketServerDlg::OnEnChangeEdit1()
 
 void CSocketServerDlg::OnBnClickedButton2()
 {
-	for (int i = 0; i < 1024; i++) {
-		if (ClientSocket[i] != INVALID_SOCKET) {
-			closesocket(ClientSocket[i]);
-			ClientSocket[i] = INVALID_SOCKET;
-		}
-	}
-	if (ServerSocket != INVALID_SOCKET) {
-		closesocket(ServerSocket);
-		ServerSocket = INVALID_SOCKET;
-	}
+	closesocket(ClientSocket);
+	closesocket(ServerSocket);
 	WSACleanup();
 	GetDlgItem(IDC_BUTTON2)->EnableWindow(FALSE);
 	GetDlgItem(IDC_BUTTON1)->EnableWindow(TRUE);

@@ -24,7 +24,7 @@ public:
 
 // 程式碼實作
 public:
-	static SOCKET ClientSocket[1024];
+	static SOCKET ClientSocket;
 	SOCKET ServerSocket;
 protected:
 	HICON m_hIcon;
@@ -43,4 +43,5 @@ public:
 	afx_msg void OnBnClickedButton1();
 	afx_msg void OnEnChangeEdit1();
 	afx_msg void OnBnClickedButton2();
+	static void PostAccept(SOCKET);
 };

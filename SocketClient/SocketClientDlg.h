@@ -41,4 +41,6 @@ public:
 	afx_msg void OnBnClickedButton2();
 	afx_msg void OnEnChangeEdit1();
 	bool check_ip();
+	afx_msg void OnEnChangeEdit2();
+	afx_msg void OnEnChangeEdit3();
 };

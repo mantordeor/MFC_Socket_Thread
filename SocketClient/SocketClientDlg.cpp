@@ -15,6 +15,13 @@ typedef struct {
 	SOCKADDR_IN ServerAddr;
 } ConnectionInfo;
 
+struct ClientCommunicateData {
+	SOCKET socket;
+	WSAEVENT event;
+	SOCKADDR_IN serverAddr;
+	int threadId;
+	char buffer[1024];
+};
 // 對 App About 使用 CAboutDlg 對話方塊
 
 class CAboutDlg : public CDialogEx
@@ -73,6 +80,8 @@ BEGIN_MESSAGE_MAP(CSocketClientDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON3, &CSocketClientDlg::OnBnClickedButton3)
 	ON_BN_CLICKED(IDC_BUTTON2, &CSocketClientDlg::OnBnClickedButton2)
 	ON_EN_CHANGE(IDC_EDIT1, &CSocketClientDlg::OnEnChangeEdit1)
+	ON_EN_CHANGE(IDC_EDIT2, &CSocketClientDlg::OnEnChangeEdit2)
+	ON_EN_CHANGE(IDC_EDIT3, &CSocketClientDlg::OnEnChangeEdit3)
 END_MESSAGE_MAP()
 
 typedef struct {
@@ -110,31 +119,113 @@ DWORD WINAPI SendMessages(LPVOID lpParam) {
 	SOCKET clientSocket = threadInfo->clientSocket;
 	SOCKADDR_IN serverAddr = threadInfo->serverAddr;
 	int threadId = threadInfo->threadId;
-	int r = connect(clientSocket, (struct sockaddr*)&serverAddr, sizeof serverAddr);
-	if (r == -1) {
-
-        CString msg;
-        msg.Format(_T("Thread %d: Connecting Server Failed: %u"), threadId, GetLastError());
+	WSAEVENT event = WSACreateEvent();
+	if (event == WSA_INVALID_EVENT) {
+		CString msg;
+		msg.Format(_T("Thread %d: WSACreateEvent failed: %d"), threadId, WSAGetLastError());
 		LogAction(msg);
-        AfxMessageBox(msg);
 		closesocket(clientSocket);
 		return 1;
 	}
-
-	char buff[1024] = "123456";
-	for(int i = 0 ; i < 10 ; i++) {
-		r = send(clientSocket, buff, strlen(buff), 0);
-		if (r == SOCKET_ERROR) {
+	ClientCommunicateData* data = new ClientCommunicateData;
+	data->socket = clientSocket;
+	data->event = event;
+	data->serverAddr = serverAddr;
+	data->threadId = threadId;
+	int r = WSAEventSelect(clientSocket, event, FD_CONNECT | FD_READ | FD_CLOSE);
+	if (r == SOCKET_ERROR) {
+		CString msg;
+		msg.Format(_T("Thread %d: WSAEventSelect failed: %d"), threadId, WSAGetLastError());
+		LogAction(msg);
+		closesocket(clientSocket);
+		CloseHandle(event);
+		delete data;
+		return 1;
+	}
+	r = connect(clientSocket, (struct sockaddr*)&serverAddr, sizeof serverAddr);
+	while (1) {
+		DWORD result = WSAWaitForMultipleEvents(1, &event, FALSE, WSA_INFINITE, FALSE);
+		if (result == WSA_WAIT_FAILED) {
 			CString msg;
-			msg.Format(_T("Thread % d: Send failed : % u"), threadId, GetLastError());
+			msg.Format(_T("Thread %d: WSAWaitForMultipleEvents failed: %d"), threadId, WSAGetLastError());
 			LogAction(msg);
-			AfxMessageBox(msg);
 			break;
 		}
-		Sleep(1000);
-	}
+		WSANETWORKEVENTS networkEvents;
+		r = WSAEnumNetworkEvents(clientSocket, event, &networkEvents);
+		if (r == SOCKET_ERROR) {
+			CString msg;
+			msg.Format(_T("Thread %d: WSAEnumNetworkEvents failed: %d"), threadId, WSAGetLastError());
+			LogAction(msg);
+			break;
+		}
+		if (networkEvents.lNetworkEvents & FD_CONNECT) {
+			if (networkEvents.iErrorCode[FD_CONNECT_BIT] == 0) {
+				/*CString msg;
+				msg.Format(_T("Thread %d: Connected to server"), threadId);
+				LogAction(msg);*/
 
+				// 發送資料
+				char buff[1024] = "123456";
+				r = send(clientSocket, buff, strlen(buff), 0);
+				if (r == SOCKET_ERROR) {
+					CString msg;
+					msg.Format(_T("Thread %d: Send failed: %d"), threadId, WSAGetLastError());
+					LogAction(msg);
+					break;
+				}
+			}
+			else {
+				// 連線失敗
+				CString msg;
+				msg.Format(_T("Thread %d: Connect error: %d"), threadId, networkEvents.iErrorCode[FD_CONNECT_BIT]);
+				LogAction(msg);
+				break;
+			}
+		}
+		if (networkEvents.lNetworkEvents & FD_READ) {
+			if (networkEvents.iErrorCode[FD_READ_BIT] == 0) {
+				int bytesReceived = recv(clientSocket, data->buffer, sizeof data->buffer, 0);
+				if (bytesReceived > 0) {
+					data->buffer[bytesReceived] = 0;
+					CString msg;
+					msg.Format(_T("Thread %d: Received data: %S"), threadId, data->buffer);
+					LogAction(msg);
+				}
+				else if (bytesReceived == 0) {
+					// server 關閉連線
+					CString msg;
+					msg.Format(_T("Thread %d: Server closed connection"), threadId);
+					LogAction(msg);
+					break;
+				}
+				else {
+					// 發生錯誤
+					/*CString msg;
+					msg.Format(_T("Thread %d: recv failed: %d"), threadId, WSAGetLastError());
+					LogAction(msg);
+					break;*/
+				}
+			}
+			else {
+				// 發生錯誤
+				CString msg;
+				msg.Format(_T("Thread %d: FD_READ error: %d"), threadId, networkEvents.iErrorCode[FD_READ_BIT]);
+				LogAction(msg);
+				break;
+			}
+		}
+		if (networkEvents.lNetworkEvents & FD_CLOSE) {
+			// server 關閉連線
+			CString msg;
+			msg.Format(_T("Thread %d: Server closed connection"), threadId);
+			LogAction(msg);
+			break;
+		}
+	}
 	closesocket(clientSocket);
+	CloseHandle(event);
+	delete data;
 	return 0;
 }
 
@@ -288,12 +379,14 @@ void CSocketClientDlg::OnBnClickedOk()
 
 void CSocketClientDlg::OnBnClickedButton1()
 {
-	
-	HANDLE hThreads[10];
-	ThreadInfo* threadInfo[10];
+	double start, end;
+	CString msg;
+	start = (double)clock();
+	HANDLE hThreads[1024];
+	ThreadInfo* threadInfo[1024];
 	// TODO: 在此加入控制項告知處理常式程式碼
 	
-	for (int i = 0; i < 10; ++i) {
+	for (int i = 0; i < 1024; ++i) {
 		SOCKET clientSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 		if (clientSocket == -1) {
 			CString msg;
@@ -305,7 +398,7 @@ void CSocketClientDlg::OnBnClickedButton1()
 		}
 		SOCKADDR_IN serverAddr = { 0 };
 		serverAddr.sin_family = AF_INET;
-		InetPton(AF_INET, _T("127.0.0.1"), &serverAddr.sin_addr.S_un.S_addr);
+		InetPton(AF_INET, m_ip, &serverAddr.sin_addr.S_un.S_addr);
 		serverAddr.sin_port = htons(7000);
 
 		threadInfo[i] = (ThreadInfo*)malloc(sizeof(ThreadInfo));
@@ -316,17 +409,47 @@ void CSocketClientDlg::OnBnClickedButton1()
 		// 建立執行緒
 		hThreads[i] = CreateThread(NULL, 0, SendMessages, threadInfo[i], 0, NULL);
 	}
-	WaitForMultipleObjects(10, hThreads, TRUE, INFINITE);
+	WaitForMultipleObjects(1024, hThreads, TRUE, INFINITE);
+	end = (double)clock();
+	double spend = (end - start) / CLOCKS_PER_SEC;
+	msg.Format(_T("TCP連線，花費時間: %.2f 秒"), spend);
+	SetDlgItemText(IDC_EDIT2, msg);
+	start = (double)clock();
 
-	// 清理資源
-	for (int i = 0; i < 10; ++i) {
+	/*for (int i = 0; i < 1024; i++) {
+		SOCKET clientSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		if (clientSocket == -1) {
+			CString msg;
+			msg.Format(_T("Thread %d: Create UDP socket failed: %u\n"), i, GetLastError());
+			LogAction(msg);
+			AfxMessageBox(msg);
+			WSACleanup();
+			return;
+		}
+		SOCKADDR_IN serverAddr = { 0 };
+		serverAddr.sin_family = AF_INET;
+		InetPton(AF_INET, m_ip ,&serverAddr.sin_addr.S_un.S_addr);
+		serverAddr.sin_port = htons(7000);
+		threadInfo[i] = (ThreadInfo*)malloc(sizeof(ThreadInfo));
+		threadInfo[i]->clientSocket = clientSocket;
+		threadInfo[i]->serverAddr = serverAddr;
+		threadInfo[i]->threadId = i;
+		hThreads[i] = CreateThread(NULL, 0, SendMessages, threadInfo[i], 0, NULL);
+	}
+
+	end = (double)clock();
+	msg.Format(_T("UDP 連線，花費時間: %.2f 秒"), (end - start) / CLOCKS_PER_SEC);
+	SetDlgItemText(IDC_EDIT3, msg);*/
+
+	for (int i = 0; i < 1024; ++i) {
 		CloseHandle(hThreads[i]);
 		
 	}
-	for (int j = 0; j < 10; ++j) {
+	for (int j = 0; j < 1024; ++j) {
 		closesocket(threadInfo[j]->clientSocket);
 		free(threadInfo[j]);
 	}
+	
 }
 
 void CSocketClientDlg::OnBnClickedButton3()
@@ -366,6 +489,26 @@ void CSocketClientDlg::OnBnClickedButton2()
 }
 
 void CSocketClientDlg::OnEnChangeEdit1()
+{
+	// TODO:  如果這是 RICHEDIT 控制項，控制項將不會
+	// 傳送此告知，除非您覆寫 CDialogEx::OnInitDialog()
+	// 函式和呼叫 CRichEditCtrl().SetEventMask()
+	// 讓具有 ENM_CHANGE 旗標 ORed 加入遮罩。
+
+	// TODO:  在此加入控制項告知處理常式程式碼
+}
+
+void CSocketClientDlg::OnEnChangeEdit2()
+{
+	// TODO:  如果這是 RICHEDIT 控制項，控制項將不會
+	// 傳送此告知，除非您覆寫 CDialogEx::OnInitDialog()
+	// 函式和呼叫 CRichEditCtrl().SetEventMask()
+	// 讓具有 ENM_CHANGE 旗標 ORed 加入遮罩。
+
+	// TODO:  在此加入控制項告知處理常式程式碼
+}
+
+void CSocketClientDlg::OnEnChangeEdit3()
 {
 	// TODO:  如果這是 RICHEDIT 控制項，控制項將不會
 	// 傳送此告知，除非您覆寫 CDialogEx::OnInitDialog()
