@@ -1,0 +1,138 @@
+[2025-09-09 14:21:04] Thread 18: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 28: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 22: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 30: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 17: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 34: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 41: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 12: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 9: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 25: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 10: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 27: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 11: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 46: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 16: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 5: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 52: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 7: WSAEnumNetworkEvents failed: 10038
+
+[2025-09-09 14:21:04] Thread 2: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 3: WSAEnumNetworkEvents failed: 10038
+
+[2025-09-09 14:21:04] Thread 14: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 40: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 45: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 56: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 59: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 58: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 57: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:21:04] Thread 51: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 22: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 26: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 15: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 21: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 14: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 13: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 24: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 29: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 6: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 3: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 20: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 30: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 33: WSAEnumNetworkEvents failed: 10038
+2025-09-09 14:28:24] Thread 18: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 32: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 2: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 37: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 40: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 43: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 45: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 36: WSAEnumNetworkEvents failed: 10038[2025-09-09 14:28:24] Thread 58: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 48: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 47: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 51: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 61: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 52: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 59: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:28:24] Thread 62: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 0: WSAEnumNetworkEvents failed: 10038
+
+[2025-09-09 14:29:54] Thread 1: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 23: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 53: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 31: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 4: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 9: WSAEnumNetworkEvents failed: 10038
+
+[2025-09-09 14:29:54] Thread 12: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 33: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 52: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 51: WSAEnumNetworkEvents failed: 10038
+2025-09-09 14:29:54] Thread 3: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 39: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 18: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 54: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 57: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 15: WSAEnumNetworkEvents failed: 10038[2025-09-09 14:29:54] Thread 16: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 20: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 17: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 61: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 60: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:29:54] Thread 62: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:32:19] Thread 1: Connected to server
+[2025-09-09 14:32:19] Thread 0: Connected to server
+[2025-09-09 14:32:19] Thread 1: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:32:19] SOCKET_ERROR: 2
+[2025-09-09 14:32:29] Thread 0: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:32:31] SOCKET_ERROR: 3
+[2025-09-09 14:32:32] SOCKET_ERROR: 4
+[2025-09-09 14:32:34] Thread 5: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:32:35] SOCKET_ERROR: 6
+[2025-09-09 14:32:35] SOCKET_ERROR: 7
+[2025-09-09 14:32:36] SOCKET_ERROR: 8
+[2025-09-09 14:32:38] SOCKET_ERROR: 17
+[2025-09-09 14:32:38] SOCKET_ERROR: 9
+[2025-09-09 14:32:39] SOCKET_ERROR: 10
+[2025-09-09 14:32:39] SOCKET_ERROR: 11
+[2025-09-09 14:32:40] SOCKET_ERROR: 12
+[2025-09-09 14:32:40] SOCKET_ERROR: 13
+[2025-09-09 14:32:41] SOCKET_ERROR: 14
+[2025-09-09 14:32:42] SOCKET_ERROR: 15
+[2025-09-09 14:32:43] SOCKET_ERROR: 16
+[2025-09-09 14:32:43] SOCKET_ERROR: 19
+[2025-09-09 14:32:45] SOCKET_ERROR: 18
+[2025-09-09 14:33:58] Thread 0: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:33:58] Thread 2: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 1: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 2: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 3: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 5: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 14: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 31: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 17: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 33: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 9: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 8: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 40: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 47: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 35: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 46: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 26: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 50: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 28: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 20: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 23: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 52: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 37: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 41: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 24: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 57: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 55: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 61: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 59: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 60: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 58: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 63: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:36:40] Thread 62: WSAEnumNetworkEvents failed: 10038
+[2025-09-09 14:38:42] Thread 0: Server closed connection

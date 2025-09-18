@@ -118,13 +118,15 @@ DWORD WINAPI SendMessages(LPVOID lpParam) {
 	ThreadInfo* threadInfo = (ThreadInfo*)lpParam;
 	SOCKET clientSocket = threadInfo->clientSocket;
 	SOCKADDR_IN serverAddr = threadInfo->serverAddr;
+	u_long iMode = 1;
+	int iResult = ioctlsocket(clientSocket, FIONBIO, &iMode);
 	int threadId = threadInfo->threadId;
 	WSAEVENT event = WSACreateEvent();
+	
 	if (event == WSA_INVALID_EVENT) {
 		CString msg;
-		msg.Format(_T("Thread %d: WSACreateEvent failed: %d"), threadId, WSAGetLastError());
+		msg.Format(_T("WSA_INVALID_EVENT %d"), threadId, WSAGetLastError());
 		LogAction(msg);
-		closesocket(clientSocket);
 		return 1;
 	}
 	ClientCommunicateData* data = new ClientCommunicateData;
@@ -132,12 +134,12 @@ DWORD WINAPI SendMessages(LPVOID lpParam) {
 	data->event = event;
 	data->serverAddr = serverAddr;
 	data->threadId = threadId;
+	
 	int r = WSAEventSelect(clientSocket, event, FD_CONNECT | FD_READ | FD_CLOSE);
 	if (r == SOCKET_ERROR) {
 		CString msg;
-		msg.Format(_T("Thread %d: WSAEventSelect failed: %d"), threadId, WSAGetLastError());
+		msg.Format(_T("SOCKET_ERROR: %d"), threadId, WSAGetLastError());
 		LogAction(msg);
-		closesocket(clientSocket);
 		CloseHandle(event);
 		delete data;
 		return 1;
@@ -193,18 +195,16 @@ DWORD WINAPI SendMessages(LPVOID lpParam) {
 					LogAction(msg);
 				}
 				else if (bytesReceived == 0) {
-					// server 關閉連線
 					CString msg;
 					msg.Format(_T("Thread %d: Server closed connection"), threadId);
 					LogAction(msg);
 					break;
 				}
 				else {
-					// 發生錯誤
-					/*CString msg;
+					CString msg;
 					msg.Format(_T("Thread %d: recv failed: %d"), threadId, WSAGetLastError());
 					LogAction(msg);
-					break;*/
+					break;
 				}
 			}
 			else {
@@ -223,7 +223,7 @@ DWORD WINAPI SendMessages(LPVOID lpParam) {
 			break;
 		}
 	}
-	closesocket(clientSocket);
+	
 	CloseHandle(event);
 	delete data;
 	return 0;
@@ -382,8 +382,8 @@ void CSocketClientDlg::OnBnClickedButton1()
 	double start, end;
 	CString msg;
 	start = (double)clock();
-	HANDLE hThreads[1024];
-	ThreadInfo* threadInfo[1024];
+	HANDLE hThreads[1024] = {0};
+	ThreadInfo* threadInfo[1024] = {0};
 	// TODO: 在此加入控制項告知處理常式程式碼
 	
 	for (int i = 0; i < 1024; ++i) {
@@ -416,37 +416,12 @@ void CSocketClientDlg::OnBnClickedButton1()
 	SetDlgItemText(IDC_EDIT2, msg);
 	start = (double)clock();
 
-	/*for (int i = 0; i < 1024; i++) {
-		SOCKET clientSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-		if (clientSocket == -1) {
-			CString msg;
-			msg.Format(_T("Thread %d: Create UDP socket failed: %u\n"), i, GetLastError());
-			LogAction(msg);
-			AfxMessageBox(msg);
-			WSACleanup();
-			return;
-		}
-		SOCKADDR_IN serverAddr = { 0 };
-		serverAddr.sin_family = AF_INET;
-		InetPton(AF_INET, m_ip ,&serverAddr.sin_addr.S_un.S_addr);
-		serverAddr.sin_port = htons(7000);
-		threadInfo[i] = (ThreadInfo*)malloc(sizeof(ThreadInfo));
-		threadInfo[i]->clientSocket = clientSocket;
-		threadInfo[i]->serverAddr = serverAddr;
-		threadInfo[i]->threadId = i;
-		hThreads[i] = CreateThread(NULL, 0, SendMessages, threadInfo[i], 0, NULL);
-	}
-
-	end = (double)clock();
-	msg.Format(_T("UDP 連線，花費時間: %.2f 秒"), (end - start) / CLOCKS_PER_SEC);
-	SetDlgItemText(IDC_EDIT3, msg);*/
-
 	for (int i = 0; i < 1024; ++i) {
-		CloseHandle(hThreads[i]);
+		if(hThreads[i])CloseHandle(hThreads[i]);
 		
 	}
 	for (int j = 0; j < 1024; ++j) {
-		closesocket(threadInfo[j]->clientSocket);
+		if(threadInfo[j]) threadInfo[j]->clientSocket = -1;
 		free(threadInfo[j]);
 	}
 	
@@ -468,7 +443,7 @@ void CSocketClientDlg::OnBnClickedButton3()
 	ServerAddr.sin_family = AF_INET;
 	InetPton(AF_INET, m_ip, &ServerAddr.sin_addr.S_un.S_addr);
 	ServerAddr.sin_port = htons(7000);
-	int r = connect(ClientSocket, (const sockaddr*)&ServerAddr, sizeof ServerAddr);
+	int r = connect(ClientSocket, (const sockaddr*) & ServerAddr, sizeof ServerAddr);
 	if (r == -1) {
 		CString msg;
 		msg.Format(_T("ConnectSocket failed : % u"), GetLastError());
